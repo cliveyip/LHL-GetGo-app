@@ -33,7 +33,6 @@ class WelcomeController < ApplicationController
       puts trip['id']
     end
 
-
     # Second, from the first trip, get the stops
     # ASSUMPTION: any given trip for the same route (or route variant) always returns the same stops
     # so we can just pick any trip (the first trip) from the route to obtain the stops
@@ -52,23 +51,59 @@ class WelcomeController < ApplicationController
 
     # TODO: do route variant for buses (current solution only for trains)
 
-    # Task 3. Get stop_times from  toStop, fromStop, date, and time
+    # ----- Task 3. Get stop_times from toStop, fromStop, date, and time -----
     toStop = "UN"
     fromStop = "SR"
+    date = '20161202'
+    route_id = '258-MI'
+    direction_id = 999  # To be determined
 
     # First, determine the direction based on toStop and fromStop
-    puts "---------- Task 3a: direction ----------"
+    # Use tripsArray obtained from previous step i.e. "6239-Fri-167", "6239-Fri-166"... "6239-Fri-148"
+    # pick the first two trips from the array, since each one represents one direction
+    # tripsArray[0] = "6239-Fri-167" is from Union (stop_sequence = 1) to Milton (stop_sequence = 9)
+    # tripsArray[1] = "6239-Fri-166" is from Milton (stop_sequence = 1) to Union (stop_sequence = 9)
 
-    # Second, get all the trips for that direction (odd/even number in tripsArray)
-    # ASSUMPTION: all the trips have alternating head-signs
+    url = 'https://getgo-api.herokuapp.com/' + '/trips/' + tripsArray[0]['id']
+    # https://getgo-api.herokuapp.com/trips/6239-Fri-167/stop_times
+    response = HTTParty.get(url)
+    stopTimesHash = JSON.parse(response.body)
+    stopTimesArray = stopTimesHash['stops']
+
+    # stopTimesHash['trip']['direction_id']  # "1"
+    # stopTimesHash['trip']['stops'].class  # array
+    # stopTimesHash['trip']['stops'].find { |s| s['id'] == 'UN' }  # {"id"=>"UN", "name"=>"Union Station", ...}
+    # stopTimesHash['trip']['stop_times'].class  # array
+    toStop_sequence = stopTimesHash['trip']['stop_times'].find { |st| st['stop_id'] == toStop}['stop_sequence'] #1
+    fromStop_sequence = stopTimesHash['trip']['stop_times'].find { |st| st['stop_id'] == fromStop}['stop_sequence'] #6
+
+    if fromStop_sequence < toStop_sequence
+       direction_id = stopTimesHash['trip']['direction_id'].to_i
+    else
+       direction_id = 1 - stopTimesHash['trip']['direction_id'].to_i # swapping 0 and 1
+    end
+
+    # get the stop_times from these trips
+
+    puts "---------- Task 3a: direction ----------"
+    puts "direction_id = " + direction_id.to_s
+
+    # Second, get all the trips with the correct direction_id
+    tripsArray.find {
+      |trip| trip['direction_id'] == direction_id
+    }
 
 
     # Third, for each trip, get the departure_time for the desired stop (by referecning stop_sequence)
 
 
+    # Fourth, compare with current time
+
+    # Time.now.getlocal("-05:00")
+
     # TODO: take care of bus routes that replace trains in non-rush hours (e.g. Bus 21 for Milton Train)
     # TODO: test other train route
 
-    # byebug;
+    byebug;
   end
 end
