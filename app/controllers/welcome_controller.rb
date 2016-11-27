@@ -89,13 +89,27 @@ class WelcomeController < ApplicationController
     puts "direction_id = " + direction_id.to_s
 
     # Second, get all the trips with the correct direction_id
-    tripsArray.find {
-      |trip| trip['direction_id'] == direction_id
+    tripsWithCorrectDirection = tripsArray.find_all {
+      |trip| trip['direction_id'] == direction_id.to_s
     }
 
+    puts "---------- Task 3b: trips with correct direction_id ----------"
+    puts tripsWithCorrectDirection
 
-    # Third, for each trip, get the departure_time for the desired stop (by referecning stop_sequence)
+    departureTimes = [];
+    # Third, for each trip, get the departure_time for the desired stop (by referencing stop_id)
+    tripsWithCorrectDirection.each do |trip|
+      url = 'https://getgo-api.herokuapp.com/' + '/trips/' + trip['id'] + '/stop_times'
+      # https://getgo-api.herokuapp.com/trips/6239-Fri-167/stop_times
+      response = HTTParty.get(url)
+      stopTimesHash = JSON.parse(response.body)
+      stopTimesArray = stopTimesHash['stop_times']
+      departureTimes << stopTimesArray.find { |st| st['stop_id'] == fromStop}['departure_time']
+    end
 
+    puts "---------- Task 3c: departure times ----------"
+    puts departureTimes
+    # ["08:45:00", "08:18:00", "08:06:00", "07:56:00", "07:45:00", "07:33:00", "07:20:00", "07:03:00", "06:42:00", "06:18:00"]
 
     # Fourth, compare with current time
 
