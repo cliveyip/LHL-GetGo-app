@@ -8,7 +8,7 @@ class WelcomeController < ApplicationController
     date = '20161202'
     route_id = '258-21'
     route_variant = '21D'
-    puts getStops(getTrips(date, route_id, route_variant)[0])
+    @stops = getStops(getTrips(date, route_id, route_variant)[0])
 
     # ----- Task 3. Get stop_times from toStop, fromStop, date, and time -----
     toStop = "01436"    # "Streetsville GO Station Parking Lot"
@@ -116,7 +116,7 @@ class WelcomeController < ApplicationController
     }
 
     puts "---------- Task 3b: trips with correct direction_id ----------"
-    puts tripsWithCorrectDirection
+    # puts tripsWithCorrectDirection
 
     departureTimes = [];
     # Third, for each trip, get the departure_time for the desired stop (by referencing stop_id)
