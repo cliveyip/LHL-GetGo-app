@@ -2,13 +2,25 @@ class WelcomeController < ApplicationController
   # Run this on http://localhost:3000/welcome/index
   def index
     # ----- Task 1. Get all route names -----
-    # puts getRoutes
+    routes = getRoutes
+    @route_values = []
+    routes.each do |route|
+      name_and_id = []
+      name_and_id += [route['long_name'], route['id']]
+      @route_values << name_and_id
+    end
 
     # ----- Task 2. Get stops from route and date -----
     date = '20161202'
     route_id = '258-21'
     route_variant = '21D'
-    @stops = getStops(getTrips(date, route_id, route_variant)[0])
+    stops = getStops(getTrips(date, route_id, route_variant)[0])
+    @stop_values = []
+    stops.each do |stop|
+      name_and_id = []
+      name_and_id += [stop['name'], stop['id']]
+      @stop_values << name_and_id
+    end
 
     # ----- Task 3. Get stop_times from toStop, fromStop, date, and time -----
     toStop = "01436"    # "Streetsville GO Station Parking Lot"
@@ -17,9 +29,12 @@ class WelcomeController < ApplicationController
     route_id = '258-21'
     route_variant = '21D'
 
-    getArrivalTimes(date, route_id, route_variant, toStop, fromStop)
+    # getArrivalTimes(date, route_id, route_variant, toStop, fromStop)
   end
 
+  def something
+    byebug
+  end
   # helper functions
   def getRoutes
     routeNames = []
@@ -30,9 +45,13 @@ class WelcomeController < ApplicationController
 
     puts "---------- Task 1: Route names ----------"
     routesArray.each do |route|
-      routeNames << route['long_name']
+      routeNames << route
     end
     return routeNames
+  end
+
+  def getRouteVariants (route_id)
+    # TODO
   end
 
   def getTrips (date, route_id, route_variant)
@@ -68,7 +87,7 @@ class WelcomeController < ApplicationController
     stopNames = []
     puts "---------- Task 2b: Stops names under the specified route variant ----------"
     stopsArray.each do |stop|
-      stopNames << stop['name']
+      stopNames << stop
     end
 
     return stopNames
@@ -142,5 +161,4 @@ class WelcomeController < ApplicationController
     # TODO: test other train route
 
   end
-
 end
