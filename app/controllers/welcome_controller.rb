@@ -10,17 +10,21 @@ class WelcomeController < ApplicationController
       @route_values << name_and_id
     end
 
+    # if params['param1']
+    #   @userSelectedRoute = param['param1']
+    # end
+
     # ----- Task 2. Get stops from route and date -----
-    date = '20161202'
-    route_id = '258-21'
-    route_variant = '21D'
-    stops = getStops(getTrips(date, route_id, route_variant)[0])
-    @stop_values = []
-    stops.each do |stop|
-      name_and_id = []
-      name_and_id += [stop['name'], stop['id']]
-      @stop_values << name_and_id
-    end
+    # date = '20161202'
+    # route_id = '258-21'
+    # route_variant = '21D'
+    # stops = getStops(getTrips(date, route_id, route_variant)[0])
+    # @stop_values = []
+    # stops.each do |stop|
+    #   name_and_id = []
+    #   name_and_id += [stop['name'], stop['id']]
+    #   @stop_values << name_and_id
+    # end
 
     # ----- Task 3. Get stop_times from toStop, fromStop, date, and time -----
     toStop = "01436"    # "Streetsville GO Station Parking Lot"
@@ -29,12 +33,43 @@ class WelcomeController < ApplicationController
     route_id = '258-21'
     route_variant = '21D'
 
+
     # getArrivalTimes(date, route_id, route_variant, toStop, fromStop)
   end
 
-  def something
-    byebug
+  def getUserDateAndRoute
+    @userSelectedDate = params['start_date']['year'] + params['start_date']['month'] + params['start_date']['day']
+    @userSelectedRoute = params['select_route']
+    # redirect_to controller: 'welcome', action: 'index', param1: @userSelectedRoute
+    @routeVariants = getRouteVariants(@userSelectedDate, @userSelectedRoute)
+    render 'route-variant'
   end
+
+  def getRouteVariant
+    @userSelectedDate = params['select_date']
+    @userSelectedRoute = params['select_route']
+    @userSelectedRouteVariant = params['select_route_variant']
+    stops = getStops(getTrips(@userSelectedDate, @userSelectedRoute, @userSelectedRouteVariant)[0])
+    @stop_values = []
+    stops.each do |stop|
+      name_and_id = []
+      name_and_id += [stop['name'], stop['id']]
+      @stop_values << name_and_id
+    end
+    render 'from-to-stops'
+  end
+
+  def getFromToStops
+    @userSelectedDate = params['select_date']
+    @userSelectedRoute = params['select_route']
+    @userSelectedRouteVariant = params['select_route_variant']
+    @userSelectedToStop = params['select_to_stop']
+    @userSelectedFromStop = params['select_from_stop']
+    @arrivalTimes = getArrivalTimes(@userSelectedDate, @userSelectedRoute, @userSelectedRouteVariant, @userSelectedToStop, @userSelectedFromStop)
+
+    render 'arrival-times'
+  end
+
   # helper functions
   def getRoutes
     routeNames = []
@@ -50,8 +85,19 @@ class WelcomeController < ApplicationController
     return routeNames
   end
 
-  def getRouteVariants (route_id)
-    # TODO
+  def getRouteVariants (date, route_id)
+    url = 'https://getgo-api.herokuapp.com/routes/' + route_id + '/trips?date=' + date
+    # https://getgo-api.herokuapp.com/routes/258-MI/trips?date=20161202
+    response = HTTParty.get(url)
+    tripsHash = JSON.parse(response.body)
+    tripsArray = tripsHash['trips']
+
+    tripsArrayRouteVariants = []
+    tripsArray.each do |trip|
+      tripsArrayRouteVariants << trip['route_variant']
+    end
+
+    return tripsArrayRouteVariants.uniq
   end
 
   def getTrips (date, route_id, route_variant)
@@ -96,7 +142,7 @@ class WelcomeController < ApplicationController
 
   def getDirection (trip, toStop, fromStop)
 
-    url = 'https://getgo-api.herokuapp.com/' + '/trips/' + trip['id']
+    url = 'https://getgo-api.herokuapp.com/' + 'trips/' + trip['id']
     # https://getgo-api.herokuapp.com/trips/6239-Fri-167/stop_times
     response = HTTParty.get(url)
     stopTimesHash = JSON.parse(response.body)
@@ -108,6 +154,7 @@ class WelcomeController < ApplicationController
     # stopTimesHash['trip']['stop_times'].class  # array
     toStop_sequence = stopTimesHash['trip']['stop_times'].find { |st| st['stop_id'] == toStop}['stop_sequence'] #1
     fromStop_sequence = stopTimesHash['trip']['stop_times'].find { |st| st['stop_id'] == fromStop}['stop_sequence'] #6
+
 
     if fromStop_sequence < toStop_sequence
        direction_id = stopTimesHash['trip']['direction_id'].to_i
@@ -151,6 +198,7 @@ class WelcomeController < ApplicationController
 
     puts "---------- Task 3c: departure times ----------"
     puts departureTimes
+    return departureTimes
     # ["08:45:00", "08:18:00", "08:06:00", "07:56:00", "07:45:00", "07:33:00", "07:20:00", "07:03:00", "06:42:00", "06:18:00"]
 
     # Fourth, compare with current time
